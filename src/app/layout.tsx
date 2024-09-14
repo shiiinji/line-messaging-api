@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { FirebaseInitializer } from '@/components/FirebaseInitializer'
+import { firebaseConfig } from '@/utils/firebase/firebaseConfig'
 import "./globals.css";
 
 const geistSans = localFont({
@@ -28,6 +30,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {children}
       </body>
+      <FirebaseInitializer config={firebaseConfig} />
     </html>
   );
 }
