@@ -21,9 +21,13 @@ export default function Home() {
   }, [])
 
   const handleLineConnect = () => {
-    // ここにLINE連携のロジックを実装
-    console.log('LINE連携を開始します')
-    // 実際の連携ロジックをここに追加
+    const lineAddFriendUrl = process.env.NEXT_PUBLIC_LINE_FRIEND_ADD_URL
+
+    if (!lineAddFriendUrl) {
+      throw new Error('LINE友だち追加URLが設定されていません')
+    }
+
+    window.location.href = lineAddFriendUrl
   }
 
   if (loading) {
