@@ -1,40 +1,34 @@
 import {
   WebhookEvent,
   WebhookRequestBody,
-  middleware,
   Message,
   ClientConfig,
   messagingApi,
-  MiddlewareConfig
 } from '@line/bot-sdk'
 import { db } from '@/utils/firebase-admin/initialize'
 import admin from 'firebase-admin'
+import { NextRequest, NextResponse } from 'next/server'
 
 const lineConfig: ClientConfig = {
   channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN!,
   channelSecret: process.env.LINE_CHANNEL_SECRET!,
 }
 
-const middlewareConfig: MiddlewareConfig = {
-  channelSecret: process.env.LINE_CHANNEL_SECRET!,
-}
-
 const client = new messagingApi.MessagingApiClient(lineConfig)
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function POST(req: any, res: any) {
+export async function POST(req: NextRequest) {
   try {
-    await new Promise((resolve, reject) => {
-      middleware(middlewareConfig)(req, res, (err) => {
-        if (err) reject(err)
-        resolve(undefined)
-      })
-    })
-
-    const events: WebhookEvent[] = (req.body as WebhookRequestBody).events
+    console.log(req)
+    const body: WebhookRequestBody = await req.json()
+    if (!body || !body.events || !Array.isArray(body.events)) {
+      console.error('Invalid webhook body structure');
+      return NextResponse.json(null, { status: 400 });
+    }
+    console.log(body)
 
     await Promise.all(
-      events.map(async (event: WebhookEvent) => {
+      body.events.map(async (event: WebhookEvent) => {
         switch (event.type) {
           case 'follow':
             await handleFollowEvent(event)
@@ -67,10 +61,10 @@ export async function POST(req: any, res: any) {
       })
     )
 
-    res.status(200).end()
+    return new NextResponse(null, { status: 200 })
   } catch (error) {
     console.error(error)
-    res.status(500).json()
+    return NextResponse.json(null, { status: 500 })
   }
 }
 
@@ -83,7 +77,7 @@ async function handleFollowEvent(event: WebhookEvent) {
   }
 
   const linkToken = await issueLinkToken(lineUserId)
-  const linkUrl = `${ process.env.NEXT_PUBLIC_DOMAIN }/link?linkToken=${ linkToken }`
+  const linkUrl = `${ process.env.NEXT_PUBLIC_DOMAIN }/line-link?linkToken=${ linkToken }`
   const message: Message = {
     type: 'template',
     altText: 'アカウント連携のご案内',

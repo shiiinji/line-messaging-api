@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { FirebaseInitializer } from '@/components/FirebaseInitializer'
 import { firebaseConfig } from '@/utils/firebase/firebaseConfig'
-import "./globals.css";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
