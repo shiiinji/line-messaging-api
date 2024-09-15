@@ -1,18 +1,18 @@
 'use client'
 import {
   getAuth,
-  signInWithPopup,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   User,
   Auth,
-  GoogleAuthProvider,
+  createUserWithEmailAndPassword as firebaseCreateUser,
+  signInWithEmailAndPassword as firebaseSignIn,
 } from 'firebase/auth'
 import { getFirebaseApp } from './initialize'
 
 let authInstance: Auth | null = null
 
-async function getAuthInstance(): Promise<Auth | null> {
+export async function getAuthInstance(): Promise<Auth | null> {
   if (typeof window === 'undefined') {
     return null
   }
@@ -30,21 +30,26 @@ async function getAuthInstance(): Promise<Auth | null> {
   return authInstance
 }
 
-export async function signInWithGoogle(): Promise<User | null> {
+export async function createUserWithEmailAndPassword(email: string, password: string): Promise<User> {
   const auth = await getAuthInstance()
+
   if (!auth) {
-    console.warn('Auth not initialized')
-    return null
+    throw new Error('Auth not initialized')
   }
 
-  const provider = new GoogleAuthProvider()
-  try {
-    const result = await signInWithPopup(auth, provider)
-    return result.user
-  } catch (error) {
-    console.error('Error signing in with Google:', error)
-    return null
+  const userCredential = await firebaseCreateUser(auth, email, password)
+  return userCredential.user
+}
+
+export async function signInWithEmailAndPassword(email: string, password: string): Promise<User> {
+  const auth = await getAuthInstance()
+
+  if (!auth) {
+    throw new Error('Auth not initialized')
   }
+
+  const userCredential = await firebaseSignIn(auth, email, password)
+  return userCredential.user
 }
 
 export async function signOut(): Promise<void> {
