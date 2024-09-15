@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import admin from 'firebase-admin'
+import { db } from '@/utils/firebase-admin/initialize'
 
-// Firebase Adminの初期化
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
@@ -13,11 +13,9 @@ if (!admin.apps.length) {
   })
 }
 
-const db = admin.firestore()
-
-export async function POST(request: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const { uid, email, displayName } = await request.json()
+    const { uid, email, displayName } = await req.json()
 
     await db.collection('users').doc(uid).set({
       uid,
