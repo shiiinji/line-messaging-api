@@ -160,6 +160,26 @@ async function handleAccountLinkEvent(event: WebhookEvent) {
             messages: [message],
           })
         }
+
+        const userProfile = await getUserProfile(lineUserId);
+        console.log(userProfile)
+
+        if (userProfile) {
+          const userData: Record<string, any> = {
+            displayName: userProfile.displayName,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          };
+
+          // pictureUrlとstatusMessageが存在する場合のみ追加
+          if (userProfile.pictureUrl) {
+            userData.pictureUrl = userProfile.pictureUrl;
+          }
+          if (userProfile.statusMessage) {
+            userData.statusMessage = userProfile.statusMessage;
+          }
+
+          await db.collection('line_users').doc(lineUserId).set(userData);
+        }
       } else {
         console.log(`Account linking failed: ${ lineUserId }`)
 
@@ -201,5 +221,24 @@ async function getFirebaseUserIdByNonce(nonce: string): Promise<string | null> {
   } catch (error) {
     console.error(error)
     return null
+  }
+}
+
+async function getUserProfile(userId: string) {
+  try {
+    const response = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
+      },
+    });
+    const data = await response.json();
+    return {
+      displayName: data.displayName,
+      pictureUrl: data.pictureUrl,
+      statusMessage: data.statusMessage,
+    };
+  } catch (error) {
+    console.error(`Error fetching user profile: ${error}`);
+    return null;
   }
 }
