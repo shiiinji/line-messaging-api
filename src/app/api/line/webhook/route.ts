@@ -36,6 +36,9 @@ export async function POST(req: NextRequest) {
           case 'accountLink':
             await handleAccountLinkEvent(event)
             break
+          case 'postback':
+            await handlePostbackEvent(event)
+            break
           // 必要になったら、各イベントに対応する関数を追加する
           // case 'unfollow':
           //   break
@@ -44,8 +47,6 @@ export async function POST(req: NextRequest) {
           // case 'leave':
           //   break
           // case 'message':
-          //   break
-          // case 'postback':
           //   break
           // case 'beacon':
           //   break
@@ -99,7 +100,6 @@ async function handleFollowEvent(event: WebhookEvent) {
     messages: [message],
   })
   console.log(`Sent account link message to user: ${ lineUserId }`)
-
 }
 
 async function issueLinkToken(userId: string): Promise<string> {
@@ -240,5 +240,56 @@ async function getUserProfile(userId: string) {
   } catch (error) {
     console.error(`Error fetching user profile: ${error}`);
     return null;
+  }
+}
+
+async function handlePostbackEvent(event: WebhookEvent) {
+  console.log('postback event:', event)
+  if (event.type === 'postback') {
+    const lineUserId = event.source.userId;
+    const postbackData = event.postback.data;
+
+    if (!lineUserId) {
+      console.error('lineUserId is undefined.');
+      return;
+    }
+
+    const params = new URLSearchParams(postbackData);
+    const action = params.get('action');
+
+    if (action === 'accountLink') {
+      const lineUserId = event.source.userId
+
+      if (!lineUserId) {
+        console.error('event.source.userId(lineUserId) is undefined.')
+        return
+      }
+
+      const linkToken = await issueLinkToken(lineUserId)
+      const linkUrl = `${ process.env.NEXT_PUBLIC_DOMAIN }/line-link?linkToken=${ linkToken }`
+      const message: Message = {
+        type: 'template',
+        altText: 'アカウント連携のご案内',
+        template: {
+          type: 'buttons',
+          text: 'アカウントを連携してください。',
+          actions: [
+            {
+              type: 'uri',
+              label: '連携する',
+              uri: linkUrl,
+            },
+          ],
+        },
+      }
+
+      await client.pushMessage({
+        to: lineUserId,
+        messages: [message],
+      })
+      console.log(`Sent account link message to user: ${ lineUserId }`)
+    } else {
+      console.log(`Unknown action: ${action}`);
+    }
   }
 }
