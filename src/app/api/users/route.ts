@@ -15,12 +15,19 @@ if (!admin.apps.length) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { uid, email, displayName } = await req.json()
+    const { firebaseUserId, email, lineProfile } = await req.json()
 
-    await db.collection('users').doc(uid).set({
-      uid,
+    if (!firebaseUserId) {
+      return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 })
+    }
+
+    await db.collection('users').doc(firebaseUserId).set({
+      firebaseUserId,
       email,
-      displayName,
+      lineUserId: lineProfile?.userId,
+      lineDisplayName: lineProfile?.displayName,
+      linePictureUrl: lineProfile?.pictureUrl,
+      linkedAt: admin.firestore.FieldValue.serverTimestamp(),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     })
 
