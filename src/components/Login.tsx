@@ -25,7 +25,6 @@ function Login() {
       body: JSON.stringify({
         firebaseUserId: user.uid,
         email: user.email,
-        displayName: user.displayName,
       }),
     })
 

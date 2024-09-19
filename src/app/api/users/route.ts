@@ -15,19 +15,11 @@ if (!admin.apps.length) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { firebaseUserId, email, lineProfile } = await req.json()
-
-    if (!firebaseUserId) {
-      return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 })
-    }
+    const { firebaseUserId, email } = await req.json()
 
     await db.collection('users').doc(firebaseUserId).set({
       firebaseUserId,
       email,
-      lineUserId: lineProfile?.userId,
-      lineDisplayName: lineProfile?.displayName,
-      linePictureUrl: lineProfile?.pictureUrl,
-      linkedAt: admin.firestore.FieldValue.serverTimestamp(),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     })
 
@@ -35,5 +27,27 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error adding user data:', error)
     return NextResponse.json({ error: 'Failed to add user data' }, { status: 500 })
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const { firebaseUserId, lineProfile } = await req.json()
+
+    if (!firebaseUserId || !lineProfile || !lineProfile.userId) {
+      return NextResponse.json({ error: 'Invalid LINE profile data' }, { status: 400 })
+    }
+
+    await db.collection('users').doc(firebaseUserId).update({
+      lineUserId: lineProfile.userId,
+      lineDisplayName: lineProfile.displayName || null,
+      linePictureUrl: lineProfile.pictureUrl || null,
+      lineLinkedAt: admin.firestore.FieldValue.serverTimestamp(),
+    })
+
+    return NextResponse.json({ message: 'LINE account linked successfully' }, { status: 200 })
+  } catch (error) {
+    console.error('Error linking LINE account:', error)
+    return NextResponse.json({ error: 'Failed to link LINE account' }, { status: 500 })
   }
 }
